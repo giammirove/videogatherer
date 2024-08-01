@@ -6,7 +6,8 @@
 
 import puppeteer from 'puppeteer-extra'
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
-puppeteer.use(StealthPlugin())
+puppeteer.use(StealthPlugin());
+import { executablePath } from 'puppeteer';
 import parser from '@babel/parser';
 import traverse from '@babel/traverse';
 import fs from 'fs';
@@ -101,6 +102,7 @@ async function find_keys(config) {
 
   const options = {
     args,
+    executablePath: executablePath(),
     headless: true,
   };
 
