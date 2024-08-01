@@ -1,6 +1,7 @@
 {
   "scripts": {
-    "start": "node src/main.js"
+    "start": "node src/main.js",
+    "keys": "node src/getkeys.js"
   },
   "dependencies": {
     "crypto-js": "^4.2.0",
