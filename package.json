@@ -1,0 +1,10 @@
+{
+  "scripts": {
+    "start": "node src/main.js"
+  },
+  "dependencies": {
+    "crypto-js": "^4.2.0",
+    "node-fetch": "^3.3.2"
+  },
+  "type": "module"
+}
