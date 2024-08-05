@@ -2,6 +2,7 @@
  * So yes it is JS and not Typescript ... bite me 
  */
 
+import fs from 'fs';
 import fetch from 'node-fetch';
 import RabbitStream from './rabbitstream.js'
 import { general_enc, general_dec, try_stream, get_keys } from './utils.js';
@@ -50,6 +51,13 @@ class UpCloud {
   static async stream(url) {
     const id = url.split("/").at(-1).split("?").at(0);
     return await RabbitStream.stream(id);
+  }
+}
+
+class MegaCloudRabbitStream {
+  static async stream(url) {
+    const id = url.split("/").at(-1).split("?").at(0);
+    return await RabbitStream.stream(id, 1);
   }
 }
 
@@ -130,16 +138,16 @@ class Watchseries {
     return await try_stream(Watchseries.SERVERS, server, url_dec);
   }
 
-  static async movie(id) {
-    return await Watchseries.tv(id, 1, 1);
+  static async movie(id, server = Watchseries.SERVER_F2CLOUD) {
+    return await Watchseries.tv(id, 1, 1, server);
   }
 
-  static async tv(id, s = 1, e = 1) {
+  static async tv(id, s = 1, e = 1, server = Watchseries.SERVER_F2CLOUD) {
     let resp = await (await fetch(`https://${Watchseries.HOST}/tv/${id}/${s}-${e}`)).text();
     let data_id = (/data-id="(.*?)"/g).exec(resp)[1];
     resp = await (await fetch(`https://${Watchseries.HOST}/ajax/episode/list/${data_id}?vrf=${encodeURIComponent(Watchseries.enc(data_id))}`)).json();
     data_id = (new RegExp(`${s}-${e}" data-id="(.*?)"`, 'g')).exec(resp["result"])[1];
-    return await Watchseries.episode(data_id);
+    return await Watchseries.episode(data_id, server);
   }
 
   static async search(query) {
@@ -164,6 +172,51 @@ class Watchseries {
   }
 }
 
+class Myflixerz {
+
+  static HOST = 'myflixerz.to';
+  static SERVER_UPCLOUD = 'UpCloud';
+  static SERVER_MEGACLOUD = 'MegaCloud';
+  static SERVER_UPSTREAM = 'Upstream';
+  static SERVERS = [
+    { id: Myflixerz.SERVER_UPCLOUD, handler: MegaCloudRabbitStream },
+    { id: Myflixerz.SERVER_MEGACLOUD, handler: MegaCloudRabbitStream },
+    { id: Myflixerz.SERVER_UPSTREAM, handler: UpCloud },
+  ]
+
+  static async episode(data_id, server = Myflixerz.SERVER_UPCLOUD) {
+    let url = `https://${Myflixerz.HOST}/ajax/episode/servers/${data_id}`;
+    let resp = (await (await fetch(url)).text()).replace(/\n/g, '');
+    data_id = (new RegExp(`data-id="(.*?)".*title=".*?${server}"`, 'gms')).exec(resp)[1];
+    url = `https://${Myflixerz.HOST}/ajax/episode/sources/${data_id}`;
+    resp = await (await fetch(url)).json();
+    return await try_stream(Myflixerz.SERVERS, server, resp.link);
+  }
+
+  static async movie(id, server = Myflixerz.SERVER_UPCLOUD) {
+    let movie_id = id.split("-").at(-1);
+    let url = `https://${Myflixerz.HOST}/ajax/episode/list/${movie_id}`;
+    let resp = (await (await fetch(url)).text()).replace(/\n/g, '');
+    movie_id = (new RegExp(`data-linkid="(.*?)".*title="${server}"`, 'gs')).exec(resp)[1];
+    url = `https://${Myflixerz.HOST}/ajax/episode/sources/${movie_id}`;
+    resp = await (await fetch(url)).json();
+    return await try_stream(Myflixerz.SERVERS, server, resp.link);
+  }
+
+  static async tv(id, s = 1, e = 1, server = Myflixerz.SERVER_UPCLOUD) {
+    const tv_id = id.split("-").at(-1).split(".").at(0);
+    let resp = await (await fetch(`https://${Myflixerz.HOST}/ajax/season/list/${tv_id}`)).text();
+    let data_id = (/data-id="(.*?)"/gms).exec(resp)[s];
+    resp = await (await fetch(`https://${Myflixerz.HOST}/ajax/season/episodes/${data_id}`)).text();
+    data_id = (/data-id="(.*?)"/gms).exec(resp)[e];
+    return await Myflixerz.episode(data_id, server);
+  }
+
+  static async test() {
+    console.log(await Myflixerz.movie("watch-the-pastor-111166"));
+    console.log(await Myflixerz.tv("the-big-bang-theory-39508.4857451", 1, 1, Myflixerz.SERVER_UPSTREAM));
+  }
+}
 
 class FlixHQ {
 
@@ -216,6 +269,7 @@ async function main() {
   //Vidsrc.test();
   Watchseries.test();
   FlixHQ.test();
+  Myflixerz.test();
 }
 
 main();

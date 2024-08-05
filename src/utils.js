@@ -58,13 +58,14 @@ export async function try_stream(SERVERS, server, url) {
         continue;
 
       try {
-        return await h.stream(url_dec);
+        return await h.handler.stream(url);
       } catch (e) {
+        console.log(`[x] ${h.id} not worked`);
       }
     }
 
     console.log(`[x] Something went wrong :(`);
-    throw "NO STREAM";
+    throw NO_STREAM_ERROR;
   }
 }
 
@@ -74,5 +75,8 @@ export function get_keys(hosts) {
     if (keys[h])
       return keys[h];
   }
-  throw "KEY NOT FOUND";
+  throw NO_KEY_ERROR;
 }
+
+export let NO_STREAM_ERROR = "NO_STREAM";
+export let NO_KEY_ERROR = "NO_STREAM";

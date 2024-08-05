@@ -41,6 +41,10 @@ Then retry ... :)
 
 If it still does not work .. well we tried folks.
 
+### TODO
+
+Fallback to other sources when the chosen one fails.
+
 ### Note
 
 This project is intended as proof of concept, 
