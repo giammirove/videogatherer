@@ -14,15 +14,12 @@ jobs:
           args: install
       - name: npm ci and npm run keys
         run: |
+          git remote set-url origin git@github.com:giammirove/videogatherer.git
           npm ci
           npm run keys 
-          pwd
-          ls
-          ls src/
+          ls -la src/
         env:
           CI: true
-      - name: switching from HTTPS to SSH
-        run: git remote set-url origin git@github.com:giammirove/videogatherer.git
       - name: checking status
         run: git status
       - name: setting identity
