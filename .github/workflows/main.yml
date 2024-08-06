@@ -15,7 +15,10 @@ jobs:
       - name: npm ci and npm run keys
         run: |
           npm ci
-          npm run keys
+          npm run keys 
+          pwd
+          ls
+          ls src/
         env:
           CI: true
       - name: switching from HTTPS to SSH
