@@ -29,7 +29,7 @@ jobs:
       - name: stage keys file
         run: git add src/keys.json
       - name: commit keys
-        run: git commit -m "Auto updating keys.json"
+        run: git commit -m "Updating keys.json"
       - name: fetch from main
         run: git fetch origin main 
       - name: push code to main

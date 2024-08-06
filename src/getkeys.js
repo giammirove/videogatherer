@@ -205,7 +205,7 @@ async function main() {
   //(await find_keys(FLIX2));
   let keys = (await find_keys(WATCHSERIES));
   fs.writeFileSync(keys_path, JSON.stringify(keys));
-  console.log(`[-] Keys successfully stored in keys.json`);
+  console.log(`[-] Keys successfully stored in ${keys_path}`);
 }
 
 main();
