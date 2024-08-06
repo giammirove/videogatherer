@@ -2,8 +2,11 @@ name: Generate keys
 on: push
 jobs:
   installDependencies:
-    name: Install Dependencies
+    name: Generate keys
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
     steps:
       - uses: actions/checkout@v3
       - name: Install Dependencies
@@ -27,12 +30,10 @@ jobs:
           git config --global user.email "rovelli.gianmarai@gmail.com"
           git config --global user.name "Gianmaria Rovelli"
       - name: stage keys file
-        run: git add src/keys.json
+        run: git add --allow-empty src/keys.json
       - name: commit keys
-        run: git commit -m "Updating keys.json"
+        run: git commit -am "Updating keys.json"
       - name: switching from HTTPS to SSH
         run: git remote set-url origin git@github.com:giammirove/videogatherer.git
-      - name: fetch from main
-        run: git fetch origin main 
       - name: push code to main
-        run: git push origin HEAD:main
+        run: git push origin main
