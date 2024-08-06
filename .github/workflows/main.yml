@@ -18,3 +18,13 @@ jobs:
           npm run keys
         env:
           CI: true
+      - name: switching from HTTPS to SSH
+        run: git remote set-url origin ${{ secrets.ssh }}
+      - name: stage keys file
+        run: git add src/keys.json
+      - name: commit keys
+        run: git commit -m "Auto updating keys.json"
+      - name: fetch from main
+        run: git fetch origin main 
+      - name: push code to main
+        run: git push origin HEAD:main
