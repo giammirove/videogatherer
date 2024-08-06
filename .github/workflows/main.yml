@@ -20,6 +20,10 @@ jobs:
           CI: true
       - name: switching from HTTPS to SSH
         run: git remote set-url origin git@github.com:giammirove/videogatherer.git
+      - name: setting identity
+        run: |
+          git config --global user.email "rovelli.gianmarai@gmail.com"
+          git config --global user.name "Gianmaria Rovelli"
       - name: stage keys file
         run: git add src/keys.json
       - name: commit keys
