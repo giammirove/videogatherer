@@ -12,9 +12,14 @@ jobs:
           PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
         with:
           args: install
+      - name: npm ci
+        run: |
+          npm ci
+        env:
+          CI: true
       - name: Generate keys
         uses: mujo-code/puppeteer-headful@16.6.0
         env:
-          CI: "true"
+          CI: true
         with:
           args: npm run keys

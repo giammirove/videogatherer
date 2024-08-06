@@ -11,6 +11,7 @@ import { executablePath } from 'puppeteer';
 import parser from '@babel/parser';
 import traverse from '@babel/traverse';
 import fs from 'fs';
+import { keys_path } from './utils.js';
 
 // watchseries sometimes crashes ... just retry
 const WATCHSERIES = {
@@ -102,7 +103,7 @@ async function find_keys(config) {
 
   const options = {
     args,
-    executablePath: executablePath(),
+    executablePath: process.env.PUPPETEER_EXEC_PATH || executablePath(),
     headless: true,
   };
 
@@ -203,7 +204,7 @@ async function main() {
   //(await find_keys(VIDSRCME));
   //(await find_keys(FLIX2));
   let keys = (await find_keys(WATCHSERIES));
-  fs.writeFileSync("keys.json", JSON.stringify(keys));
+  fs.writeFileSync(keys_path, JSON.stringify(keys));
   console.log(`[-] Keys successfully stored in keys.json`);
 }
 
