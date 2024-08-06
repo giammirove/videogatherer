@@ -19,8 +19,6 @@ jobs:
         run: |
           npm ci
           npm run keys 
-          rm src/keys.json
-          ls src/
         env:
           CI: true
       - name: checking status
@@ -30,7 +28,7 @@ jobs:
           git config --global user.email "rovelli.gianmarai@gmail.com"
           git config --global user.name "Gianmaria Rovelli"
       - name: stage keys file
-        run: git add --allow-empty src/keys.json
+        run: git add src/keys.json
       - name: commit keys
         run: git commit -am "Updating keys.json" || true
       - name: switching from HTTPS to SSH
