@@ -71,7 +71,7 @@ export async function try_stream(SERVERS, server, url) {
 
 export const keys_path = path.join(__dirname, "keys.json");
 
-const keys = JSON.parse(fs.readFileSync(keys_path) || "[]");
+const keys = JSON.parse((fs.existsSync(keys_path)) ? fs.readFileSync(keys_path) : "{}");
 export function get_keys(hosts) {
   for (const h of hosts) {
     if (keys[h])
