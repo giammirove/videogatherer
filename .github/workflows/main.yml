@@ -32,8 +32,8 @@ jobs:
       - name: stage keys file
         run: git add --allow-empty src/keys.json
       - name: commit keys
-        run: git commit -am "Updating keys.json"
+        run: git commit -am "Updating keys.json" || true
       - name: switching from HTTPS to SSH
         run: git remote set-url origin git@github.com:giammirove/videogatherer.git
       - name: push code to main
-        run: git push origin main
+        run: git push origin main || true
