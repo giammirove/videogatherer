@@ -5,8 +5,8 @@ jobs:
     name: Generate keys
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      issues: write
+      contents: read|write
+      actions: read|write
     steps:
       - uses: actions/checkout@v3
       - name: Install Dependencies
@@ -32,6 +32,8 @@ jobs:
       - name: commit keys
         run: git commit -am "Updating keys.json" || true
       - name: switching from HTTPS to SSH
-        run: git remote set-url origin git@github.com:giammirove/videogatherer.git
+        run: git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
       - name: push code to main
         run: git push origin main || true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
