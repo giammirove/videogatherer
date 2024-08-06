@@ -14,11 +14,9 @@ jobs:
           args: install
       - name: npm ci and npm run keys
         run: |
-          rm src/keys.json
           npm ci
           npm run keys 
-          pwd
-          ls
+          rm src/keys.json
           ls src/
         env:
           CI: true
