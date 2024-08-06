@@ -19,7 +19,7 @@ jobs:
         env:
           CI: true
       - name: switching from HTTPS to SSH
-        run: git remote set-url origin ${{ secrets.ssh }}
+        run: git remote set-url origin git@github.com:giammirove/videogatherer.git
       - name: stage keys file
         run: git add src/keys.json
       - name: commit keys
