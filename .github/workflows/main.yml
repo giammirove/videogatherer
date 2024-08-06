@@ -6,7 +6,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read|write
-      actions: read|write
     steps:
       - uses: actions/checkout@v3
       - name: Install Dependencies
