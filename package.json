@@ -7,11 +7,16 @@
     "@babel/parser": "^7.25.3",
     "@babel/traverse": "^7.25.3",
     "crypto-js": "^4.2.0",
+    "deobfuscator": "^2.4.5",
     "node-fetch": "^3.3.2",
     "puppeteer": "^22.15.0",
     "puppeteer-core": "^22.15.0",
     "puppeteer-extra": "^3.3.6",
-    "puppeteer-extra-plugin-stealth": "^2.11.2"
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "webcrack": "^2.14.1"
   },
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "jsdom": "^24.1.1"
+  }
 }

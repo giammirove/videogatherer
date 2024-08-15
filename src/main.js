@@ -2,7 +2,6 @@
  * So yes it is JS and not Typescript ... bite me 
  */
 
-import fs from 'fs';
 import fetch from 'node-fetch';
 import RabbitStream from './rabbitstream.js'
 import { general_enc, general_dec, try_stream, get_keys } from './utils.js';
@@ -264,12 +263,79 @@ class FlixHQ {
   }
 }
 
+class Superembed {
+  static USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36';
+
+  static async stream(url, args = { Referer: "" }) {
+    let res = {};
+    do {
+      res = await fetch(url, {
+        headers: {
+          'User-Agent': Superembed.USER_AGENT,
+          'Referer': args['Referer']
+        },
+        redirect: 'manual'
+      });
+      url = res.headers.get('location');
+    } while (url != null);
+    let body = await res.text();
+    const script = (/<script>(.*?eval.*?)<\/script>/gms).exec(body)[1]?.replace("eval(", "(");
+    const evalScript = eval(script).replace("var player = new Playerjs(", "").slice(0, -2);
+    const data = eval(`let d = ${evalScript}; d`);
+    return data;
+  }
+}
+
+class VidsrcMe {
+
+  static HOST = 'vidsrc.net';
+  static ALT_HOSTS = [VidsrcMe.HOST, 'vidsrc.stream', 'vidsrc.xyz'];
+  static REFERER = 'https://vidsrc.stream';
+  static SERVER_SUPEREMBED = 'Superembed';
+  static SERVERS = [
+    { id: VidsrcMe.SERVER_SUPEREMBED, handler: Superembed },
+  ]
+
+  static async fetchReferer(url, args = {}) {
+    if (args.headers == undefined)
+      args.headers = {};
+    if (args.headers['Referer'] == undefined && args.headers['Referer'] != "")
+      args.headers['Referer'] = VidsrcMe.REFERER;
+    return fetch(url, args);
+  }
+
+  static async episode(data_id, server = VidsrcMe.SERVER_SUPEREMBED) {
+    let url = `https://${VidsrcMe.HOST}/embed/${data_id}`;
+    let res = await (await VidsrcMe.fetchReferer(url)).text();
+    let hash = (/data-hash="(.*?)".*Superembed.*?<\/div>/gm).exec(res)[1];
+    url = `${VidsrcMe.REFERER}/rcp/${hash}`;
+    res = await (await VidsrcMe.fetchReferer(url)).text();
+    const srcrcpLink = /src:\s*'(.*)'/.exec(res)?.[1];
+    url = `https:${srcrcpLink}`;
+    return await try_stream(VidsrcMe.SERVERS, server, url, { 'Referer': VidsrcMe.REFERER });
+  }
+
+  static async tv(data_id, s = 1, e = 1, server = VidsrcMe.SERVER_SUPEREMBED) {
+    return VidsrcMe.episode(`${data_id}/${s}-${e}`, server);
+  }
+
+  static async movie(data_id, server = VidsrcMe.SERVER_SUPEREMBED) {
+    return VidsrcMe.episode(data_id, server);
+  }
+
+  static async test() {
+    console.log(await VidsrcMe.tv('tt1312171', 2, 3));
+    console.log(await VidsrcMe.movie('tt1300854'));
+  }
+}
+
 async function main() {
-  /* not working in date 01-08-2024 */
+  /* not working since 01-08-2024 */
   //Vidsrc.test();
   Watchseries.test();
   FlixHQ.test();
   Myflixerz.test();
+  VidsrcMe.test();
 }
 
 main();

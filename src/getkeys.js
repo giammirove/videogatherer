@@ -11,6 +11,10 @@ import { executablePath } from 'puppeteer';
 import parser from '@babel/parser';
 import traverse from '@babel/traverse';
 import fs from 'fs';
+import { webcrack } from 'webcrack';
+import { Deobfuscator } from "deobfuscator"
+const synchrony = new Deobfuscator()
+
 import { keys_path } from './utils.js';
 
 // watchseries sometimes crashes ... just retry
@@ -51,6 +55,19 @@ const VIDSRC = {
   MAX_TIMEOUT: 2500
 }
 
+const VIDSRC2 = {
+  // PlayStation bypasses dev tools detection
+  USER_AGENT: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36; PlayStation',
+  EXPECTED_KEYS: 5,
+  INJECT_URLS: [
+    "all.js",
+    "embed.js"
+  ],
+  INIT_URL: "https://vidsrc2.to/embed/movie/385687",
+  BTN_ID: "#btn-play",
+  MAX_TIMEOUT: 2500
+}
+
 const VIDSRCME = {
   // PlayStation bypasses dev tools detection
   USER_AGENT: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36; PlayStation',
@@ -68,7 +85,14 @@ const VIDSRCME = {
 // finding possible names for the rc4 function
 // a new source is not generated since some functions depend on the min algorithm
 // used originally
-function get_rc4_names(source) {
+async function get_rc4_names(source) {
+  try {
+    source = (await webcrack(source, { mangle: false })).code;
+    source = (await webcrack(source, { mangle: false })).code;
+    source = (await webcrack(source, { mangle: false })).code;
+  } catch (e) {
+  }
+
   const ast = parser.parse(source);
   let names = [];
   const MyVisitor = {
@@ -125,7 +149,8 @@ async function find_keys(config) {
     if (config.INJECT_URLS.some(v => url.includes(v))) {
       let host = (new URL(url)).host;
       let body = await (await fetch(url)).text();
-      const funcNames = get_rc4_names(body);
+      const funcNames = await get_rc4_names(body);
+      console.log(url, funcNames)
       // risky approach since we could modify multiple functions
       // ... but in the worst case we would just be printing so no harm
       for (let n of funcNames) {
@@ -201,6 +226,7 @@ async function find_keys(config) {
 
 async function main() {
   //(await find_keys(VIDSRC));
+  //(await find_keys(VIDSRC2));
   //(await find_keys(VIDSRCME));
   //(await find_keys(FLIX2));
   let keys = (await find_keys(WATCHSERIES));

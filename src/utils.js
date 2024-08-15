@@ -47,10 +47,10 @@ export function general_dec(key, inp) {
   return e;
 }
 
-export async function try_stream(SERVERS, server, url) {
+export async function try_stream(SERVERS, server, url, args = {}) {
   let handler = SERVERS.find(e => e.id == server)?.handler;
   try {
-    return await handler.stream(url);
+    return await handler.stream(url, args);
   } catch (e) {
     console.log(`[x] Chosen method is not working ... falling back to others`);
     for (const h of SERVERS) {
@@ -58,7 +58,7 @@ export async function try_stream(SERVERS, server, url) {
         continue;
 
       try {
-        return await h.handler.stream(url);
+        return await h.handler.stream(url, args);
       } catch (e) {
         console.log(`[x] ${h.id} not worked`);
       }
