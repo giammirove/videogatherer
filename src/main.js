@@ -63,7 +63,7 @@ class MegaCloudRabbitStream {
 
 class Vidsrc {
 
-  static HOST = 'vidsrc.to';
+  static HOST = 'vidsrc2.to';
   static ALT_HOSTS = [Vidsrc.HOST];
 
   static enc(inp) {
@@ -71,7 +71,7 @@ class Vidsrc {
   }
 
   static dec(inp) {
-    return general_dec(get_keys(Vidsrc.ALT_HOSTS)[0], inp);
+    return general_dec(get_keys(Vidsrc.ALT_HOSTS)[1], inp);
   }
 
   static async episode(data_id) {
@@ -100,9 +100,9 @@ class Vidsrc {
 
   static async test() {
     console.log(await Vidsrc.movie("385687"));
-    console.log(await Vidsrc.tv("tt0944947", 1, 1));
-    console.log(await Vidsrc.tv("tt1190634", 1, 1));
-    console.log(await Vidsrc.tv("60059", 1, 1));
+    //console.log(await Vidsrc.tv("tt0944947", 1, 1));
+    //console.log(await Vidsrc.tv("tt1190634", 1, 1));
+    //console.log(await Vidsrc.tv("60059", 1, 1));
   }
 }
 
@@ -330,8 +330,7 @@ class VidsrcMe {
 }
 
 async function main() {
-  /* not working since 01-08-2024 */
-  //Vidsrc.test();
+  Vidsrc.test();
   Watchseries.test();
   FlixHQ.test();
   Myflixerz.test();

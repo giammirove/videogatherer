@@ -1,5 +1,5 @@
 # VideoGatherer
-Scraping movies and tv series from vidsrc.to, flixhq.to and watchseriesx.to.
+Scraping movies and tv series from vidsrc.to, flixhq.to, watchseriesx.to, myflixerz.to, vidsrc.net.
 
 At the moment the purpose of this repository is to expose methods used 
 to scrape websites.
@@ -24,7 +24,7 @@ npm run start
 ```
 
 Examples of how to request an episode/movie can be found in the `test` function
-of each class (`Vidsrc`, `FlixHQ`, `Watchseries`).
+of each class (`Vidsrc`, `FlixHQ`, `Watchseries`, `Myflixerz`, `VidsrcMe`).
 
 ### What if it does not work
 

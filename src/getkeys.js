@@ -12,8 +12,6 @@ import parser from '@babel/parser';
 import traverse from '@babel/traverse';
 import fs from 'fs';
 import { webcrack } from 'webcrack';
-import { Deobfuscator } from "deobfuscator"
-const synchrony = new Deobfuscator()
 
 import { keys_path } from './utils.js';
 
@@ -150,7 +148,6 @@ async function find_keys(config) {
       let host = (new URL(url)).host;
       let body = await (await fetch(url)).text();
       const funcNames = await get_rc4_names(body);
-      console.log(url, funcNames)
       // risky approach since we could modify multiple functions
       // ... but in the worst case we would just be printing so no harm
       for (let n of funcNames) {
@@ -225,11 +222,20 @@ async function find_keys(config) {
 }
 
 async function main() {
+  let keys = {};
   //(await find_keys(VIDSRC));
-  //(await find_keys(VIDSRC2));
   //(await find_keys(VIDSRCME));
   //(await find_keys(FLIX2));
-  let keys = (await find_keys(WATCHSERIES));
+  try {
+    keys = (await find_keys(VIDSRC2));
+  } catch (e) {
+    console.log(`[x] Error with vidsrc2.to`);
+  }
+  try {
+    keys = Object.assign({}, keys, (await find_keys(WATCHSERIES)));
+  } catch (e) {
+    console.log(`[x] Error with watchseriesx.to`);
+  }
   fs.writeFileSync(keys_path, JSON.stringify(keys));
   console.log(`[-] Keys successfully stored in ${keys_path}`);
 }
