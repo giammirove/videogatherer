@@ -32,6 +32,23 @@ export function rc4(key, inp) {
   }
   return decrypted;
 }
+export function subst2(a) {
+  return (btoa(a)).replace(/\//g, '_').replace(/\+/g, '-');
+}
+export function subst1(a) {
+  return atob((a).replace(/_/g, '/').replace(/-/g, '+'));
+}
+export function mapp(a, b, c) {
+  let d = b.length;
+  const e = {};
+  while (d-- && (e[b[d]] = c[d] || '')) {
+    ;
+  }
+  return a.split('').map(a => e[a] || a).join('');
+}
+export function reverse(a) {
+  return a.split('').reverse().join('');
+}
 
 export function general_enc(key, inp) {
   inp = encodeURIComponent(inp);
@@ -51,7 +68,7 @@ export async function try_stream(SERVERS, server, url, args = {}) {
   let handler = SERVERS.find(e => e.id == server)?.handler;
   try {
     return await handler.stream(url, args);
-  } catch (e) {
+  } catch {
     console.log(`[x] Chosen method is not working ... falling back to others`);
     for (const h of SERVERS) {
       if (h.handler == handler)
@@ -59,7 +76,7 @@ export async function try_stream(SERVERS, server, url, args = {}) {
 
       try {
         return await h.handler.stream(url, args);
-      } catch (e) {
+      } catch {
         console.log(`[x] ${h.id} not worked`);
       }
     }

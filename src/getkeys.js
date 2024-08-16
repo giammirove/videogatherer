@@ -18,7 +18,7 @@ import { keys_path } from './utils.js';
 // watchseries sometimes crashes ... just retry
 const WATCHSERIES = {
   USER_AGENT: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36',
-  EXPECTED_KEYS: 5,
+  EXPECTED_KEYS: 18,
   INJECT_URLS: [
     "all.js",
     "embed.js"
@@ -56,7 +56,7 @@ const VIDSRC = {
 const VIDSRC2 = {
   // PlayStation bypasses dev tools detection
   USER_AGENT: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36; PlayStation',
-  EXPECTED_KEYS: 5,
+  EXPECTED_KEYS: 18,
   INJECT_URLS: [
     "all.js",
     "embed.js"
@@ -79,16 +79,42 @@ const VIDSRCME = {
   MAX_TIMEOUT: 2500
 }
 
+const ANIMEWAVE = {
+  USER_AGENT: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36; PlayStation',
+  EXPECTED_KEYS: 18,
+  INJECT_URLS: [
+    "all.js",
+    "embed.js"
+  ],
+  INIT_URL: "https://aniwave.to/watch/one-piece.x3ln/ep-1",
+  BTN_ID: "#player-wrapper",
+  MAX_TIMEOUT: 2500
+}
+
 
 // finding possible names for the rc4 function
 // a new source is not generated since some functions depend on the min algorithm
 // used originally
 async function get_rc4_names(source) {
   try {
+    // deobfuscate 
     source = (await webcrack(source, { mangle: false })).code;
     source = (await webcrack(source, { mangle: false })).code;
     source = (await webcrack(source, { mangle: false })).code;
   } catch (e) {
+    console.log(`[x] Can't webcrack`);
+  }
+
+  function add_params(name, params) {
+    // escape ( and ) to be used in the regexp
+    name = name + '\\(';
+    for (let i = 0; i < params.length; i++) {
+      name += params[i].name;
+      if (i < params.length - 1)
+        name += ',';
+    }
+    name += '\\)'
+    return name;
   }
 
   const ast = parser.parse(source);
@@ -96,15 +122,29 @@ async function get_rc4_names(source) {
   const MyVisitor = {
     FunctionDeclaration(path) {
       let forCount = 0;
+      let whileCount = 0;
       if (path?.node?.body?.body) {
         for (let n of path.node.body.body) {
           if (n.type == 'ForStatement') {
             forCount++;
             if (forCount >= 3) {
-              if (path.node.id.name)
-                names.push(path.node.id.name);
-              break;
+              if (path.node.id.name) {
+                let name = add_params(path.node.id.name, path.node.params);
+                names.push({ name: name, type: 'rc4' });
+              }
+              return;
             }
+          }
+          if (n.type == 'WhileStatement') {
+            whileCount++;
+          }
+        }
+        // the new technique used by some websites involves a new function that maps
+        // the input based on a key
+        if (whileCount == 1 && path.node.params.length == 3) {
+          if (path.node.id.name) {
+            let name = add_params(path.node.id.name, path.node.params);
+            names.push({ name: name, type: 'map' });
           }
         }
       }
@@ -116,6 +156,16 @@ async function get_rc4_names(source) {
 }
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// https://gist.github.com/jabney/5018b4adc9b2bf488696
+function entropy(str) {
+  const len = str.length
+  const frequencies = Array.from(str)
+    .reduce((freq, c) => (freq[c] = (freq[c] || 0) + 1) && freq, {})
+  return Object.values(frequencies)
+    .reduce((sum, f) => sum - f / len * Math.log2(f / len), 0)
+}
+
 
 async function find_keys(config) {
   const args = [
@@ -147,13 +197,16 @@ async function find_keys(config) {
     if (config.INJECT_URLS.some(v => url.includes(v))) {
       let host = (new URL(url)).host;
       let body = await (await fetch(url)).text();
-      const funcNames = await get_rc4_names(body);
+      const funcs = await get_rc4_names(body);
       // risky approach since we could modify multiple functions
       // ... but in the worst case we would just be printing so no harm
-      for (let n of funcNames) {
-        let rep = `function ${n}() {if(arguments){arguments['host']='${host}';console.log(\`S:\${JSON.stringify(arguments)}\`);}`;
-        body = body.replaceAll(`function ${n}() {`, rep);
-        body = body.replaceAll(`function ${n}(){`, rep);
+      for (let n of funcs) {
+        let reg = new RegExp(`function ${n.name}\\s*{`, 'gms');
+        let sel = reg.exec(body);
+        if (sel) {
+          let rep = `${sel[0]}if(arguments){arguments['host']='${host}';arguments['type']='${n.type}';console.log(\`S:\${JSON.stringify(arguments)}\`);}`;
+          body = body.replaceAll(sel[0], rep);
+        }
       }
       request.respond({
         status: 200,
@@ -167,6 +220,13 @@ async function find_keys(config) {
   let closed = false;
   return new Promise(async (resolve) => {
 
+    function add_key(host, key) {
+      if (!keys[host].includes(key) && entropy(key) > 3.2) {
+        keys[host].push(key)
+        return true;
+      }
+    }
+
     page
       .on('console', async (message) => {
         let t = message.text();
@@ -176,9 +236,17 @@ async function find_keys(config) {
             return;
           if (!keys[j['host']])
             keys[j['host']] = [];
-          if (!keys[j['host']].includes(j['0'])) {
-            keys[j['host']].push(j['0'])
-            keysNum++;
+          if (j['type'] == 'rc4') {
+            if (add_key(j['host'], j['0'])) {
+              keysNum++;
+            }
+          } else if (j['type'] == 'map') {
+            if (add_key(j['host'], j['1'])) {
+              keysNum++;
+            }
+            if (add_key(j['host'], j['2'])) {
+              keysNum++;
+            }
           }
           if (keysNum >= config.EXPECTED_KEYS) {
             closed = true;
@@ -227,14 +295,19 @@ async function main() {
   //(await find_keys(VIDSRCME));
   //(await find_keys(FLIX2));
   try {
-    keys = (await find_keys(VIDSRC2));
+    keys = Object.assign({}, keys, (await find_keys(VIDSRC2)));
   } catch (e) {
-    console.log(`[x] Error with vidsrc2.to`);
+    console.log(`[x] Error with vidsrc2.to ${e}`);
   }
   try {
     keys = Object.assign({}, keys, (await find_keys(WATCHSERIES)));
   } catch (e) {
-    console.log(`[x] Error with watchseriesx.to`);
+    console.log(`[x] Error with watchseriesx.to ${e}`);
+  }
+  try {
+    keys = Object.assign({}, keys, (await find_keys(ANIMEWAVE)));
+  } catch (e) {
+    console.log(`[x] Error with animewave.to ${e}`);
   }
   fs.writeFileSync(keys_path, JSON.stringify(keys));
   console.log(`[-] Keys successfully stored in ${keys_path}`);

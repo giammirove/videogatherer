@@ -4,23 +4,33 @@
 
 import fetch from 'node-fetch';
 import RabbitStream from './rabbitstream.js'
-import { general_enc, general_dec, try_stream, get_keys } from './utils.js';
+import { mapp, reverse, subst1, subst2, rc4, general_enc, general_dec, try_stream, get_keys } from './utils.js';
 
 class F2Cloud {
 
   // alternative hosts
-  static ALT_HOSTS = ["vid2faf.site"];
+  static ALT_HOSTS = ["vid2faf.site", "vid2v11.site"];
 
   static embed_enc(inp) {
-    return general_enc(get_keys(F2Cloud.ALT_HOSTS)[0], inp);
+    let keys = get_keys(F2Cloud.ALT_HOSTS);
+    let a = mapp(subst2(rc4(keys[0], inp)), keys[1], keys[2]);
+    a = subst2(rc4(keys[5], mapp(reverse(a), keys[3], keys[4])))
+    a = subst2(rc4(keys[6], reverse(a)))
+    a = subst2(reverse(mapp(a, keys[7], keys[8])))
+    return a;
   }
 
   static h_enc(inp) {
-    return general_enc(get_keys(F2Cloud.ALT_HOSTS)[1], inp);
+    return general_enc(get_keys(F2Cloud.ALT_HOSTS)[9], inp);
   }
 
   static embed_dec(inp) {
-    return general_dec(get_keys(F2Cloud.ALT_HOSTS)[2], inp);
+    let keys = get_keys(F2Cloud.ALT_HOSTS);
+    let a = subst1(inp)
+    a = rc4(keys[6], subst1(a = mapp(a = reverse(a), keys[8], keys[7])))
+    a = mapp(a = rc4(keys[5], subst1(a = reverse(a))), keys[4], keys[3])
+    a = rc4(keys[0], subst1(a = mapp(a = reverse(a), keys[2], keys[1])))
+    return a;
   }
 
   static async stream(url) {
@@ -64,7 +74,7 @@ class MegaCloudRabbitStream {
 class Vidsrc {
 
   static HOST = 'vidsrc2.to';
-  static ALT_HOSTS = [Vidsrc.HOST];
+  static ALT_HOSTS = [Vidsrc.HOST, 'vid2v11.site'];
 
   static enc(inp) {
     return general_enc(get_keys(Vidsrc.ALT_HOSTS)[0], inp);
@@ -100,9 +110,9 @@ class Vidsrc {
 
   static async test() {
     console.log(await Vidsrc.movie("385687"));
-    //console.log(await Vidsrc.tv("tt0944947", 1, 1));
-    //console.log(await Vidsrc.tv("tt1190634", 1, 1));
-    //console.log(await Vidsrc.tv("60059", 1, 1));
+    console.log(await Vidsrc.tv("tt0944947", 1, 1));
+    console.log(await Vidsrc.tv("tt1190634", 1, 1));
+    console.log(await Vidsrc.tv("60059", 1, 1));
   }
 }
 
@@ -120,11 +130,21 @@ class Watchseries {
   ]
 
   static enc(inp) {
-    return general_enc(get_keys(Watchseries.ALT_HOSTS)[0], inp);
+    let keys = get_keys(Watchseries.ALT_HOSTS);
+    let a = subst2(rc4(keys[2], reverse(mapp(inp, keys[0], keys[1]))));
+    a = subst2(rc4(keys[5], reverse(mapp(a, keys[3], keys[4]))));
+    a = subst2(rc4(keys[8], reverse(mapp(a, keys[6], keys[7]))));
+    a = subst2(a);
+    return a;
   }
 
   static dec(inp) {
-    return general_dec(get_keys(Watchseries.ALT_HOSTS)[1], inp);
+    let keys = get_keys(Watchseries.ALT_HOSTS);
+    let c = subst1(inp);
+    c = mapp(reverse(rc4(keys[8], subst1(c))), keys[7], keys[6])
+    c = mapp(reverse(rc4(keys[5], subst1(c))), keys[4], keys[3])
+    c = mapp(reverse(rc4(keys[2], subst1(c))), keys[1], keys[0])
+    return c;
   }
 
   static async episode(data_id, server = Watchseries.SERVER_F2CLOUD) {
@@ -162,14 +182,88 @@ class Watchseries {
   }
 
   static async test() {
-    console.log(await Watchseries.movie("vika-k3n6m"));
-    console.log(await Watchseries.tv("the-big-bang-theory-jyr9n", 1, 2));
+    console.log(await Watchseries.movie("movie-vika-online-k3n6m"));
+    console.log(await Watchseries.tv("the-big-bang-theory-jyr9n", 1, 1));
     let results = (await Watchseries.search("The big bang theory"));
     if (results[0].type == 'tv')
       console.log(await Watchseries.tv(results[0].id, 1, 2));
-    console.log(await Watchseries.movie(results[0].id));
+    else
+      console.log(await Watchseries.movie(results[0].id));
   }
 }
+
+class Aniwave {
+
+  static HOST = 'aniwave.to';
+  static ALT_HOSTS = [Aniwave.HOST];
+  static SERVER_F2CLOUD = 41;
+  static SERVER_MEGACLOUD = 28;
+  static SERVER_FMCLOUD = 45;
+  static SERVERS = [
+    { id: Aniwave.SERVER_F2CLOUD, handler: F2Cloud },
+    { id: Aniwave.SERVER_MEGACLOUD, handler: F2Cloud },
+    { id: Aniwave.SERVER_FMCLOUD, handler: FMCloud },
+  ]
+
+  static enc(a) {
+    let keys = get_keys(Aniwave.ALT_HOSTS);
+    a = reverse(subst2(rc4(keys[2], mapp(a, keys[0], keys[1]))));
+    a = mapp(subst2(rc4(keys[3], reverse(a))), keys[4], keys[5]);
+    a = subst2(rc4(keys[8], reverse(mapp(a, keys[6], keys[7]))));
+    return a = subst2(a);
+  }
+  static dec(a) {
+    let keys = get_keys(Aniwave.ALT_HOSTS);
+    a = subst1(a);
+    a = mapp(reverse(rc4(keys[8], subst1(a))), keys[7], keys[6]);
+    a = reverse(rc4(keys[3], subst1(mapp(a, keys[5], keys[4]))));
+    return a = mapp(rc4(keys[2], subst1(reverse(a))), keys[1], keys[0]);
+  }
+
+  static async episode(data_id, server = Aniwave.SERVER_F2CLOUD) {
+    let url = `https://${Aniwave.HOST}/ajax/server/list/${data_id}?vrf=${encodeURIComponent(Aniwave.enc(data_id))}`;
+    let resp = await (await fetch(url)).json();
+    data_id = (new RegExp(`data-sv-id="${server}" data-link-id="(.*?)"`)).exec(resp["result"])[1];
+    url = `https://${Aniwave.HOST}/ajax/server/${data_id}?vrf=${encodeURIComponent(Aniwave.enc(data_id))}`;
+    resp = await (await fetch(url)).json();
+    let url_dec = Aniwave.dec(resp["result"]["url"]);
+    return await try_stream(Aniwave.SERVERS, server, url_dec);
+  }
+
+  static async movie(id, server = Aniwave.SERVER_F2CLOUD) {
+    return await Aniwave.tv(id, 1, server);
+  }
+
+  static async tv(id, s = 1, server = Aniwave.SERVER_F2CLOUD) {
+    let resp = await (await fetch(`https://${Aniwave.HOST}/watch/${id}/ep-${s}`)).text();
+    let data_id = (/data-id="(.*?)"/g).exec(resp)[1];
+    resp = await (await fetch(`https://${Aniwave.HOST}/ajax/episode/list/${data_id}?vrf=${encodeURIComponent(Aniwave.enc(data_id))}`)).json();
+    data_id = (new RegExp(`data-num="${s}".*?data-ids="(.*?)"`, 'g')).exec(resp["result"])[1];
+    return await Aniwave.episode(data_id, server);
+  }
+
+  static async search(query) {
+    let url = `https://${Aniwave.HOST}/filter?keyword=${query}`;
+    let resp = await (await fetch(url)).text();
+    let results = resp.match(new RegExp(`<a class="name d-title" href=".*?">.*?</a>`, 'g'));
+    let ret = [];
+    for (let r of results) {
+      let [, type, id, title] = (new RegExp(`href="/(.*?)/(.*?)" .*>(.*?)</a>`)).exec(r);
+      ret.push({ type, title, id });
+    }
+    return ret;
+  }
+
+  static async test() {
+    console.log(await Aniwave.tv("one-piece.x3ln", 1));
+    let results = (await Aniwave.search("one piece"));
+    if (results[0].type == 'tv')
+      console.log(await Aniwave.tv(results[0].id, 1));
+    else
+      console.log(await Aniwave.movie(results[0].id));
+  }
+}
+
 
 class Myflixerz {
 
@@ -335,6 +429,7 @@ async function main() {
   FlixHQ.test();
   Myflixerz.test();
   VidsrcMe.test();
+  Aniwave.test();
 }
 
 main();
