@@ -79,7 +79,7 @@ const VIDSRCME = {
   MAX_TIMEOUT: 2500
 }
 
-const ANIMEWAVE = {
+const ANIWAVE = {
   USER_AGENT: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36; PlayStation',
   EXPECTED_KEYS: 18,
   INJECT_URLS: [
@@ -250,8 +250,6 @@ async function find_keys(config) {
           }
           if (keysNum >= config.EXPECTED_KEYS) {
             closed = true;
-            if (browser)
-              await browser.close()
             resolve(keys);
           }
         }
@@ -270,7 +268,9 @@ async function find_keys(config) {
         await page.bringToFront();
         let btn = await page.$(config.BTN_ID);
         if (btn && !closed) {
-          btn.click();
+          await page.evaluate((element) => {
+            element.click()
+          }, btn)
         }
         await sleep(200);
       }
@@ -280,35 +280,17 @@ async function find_keys(config) {
         console.log(`[x] ${e}`);
     }
 
-    if (browser && !closed) {
-      await sleep(config.MAX_TIMEOUT);
-      await browser.close();
-    }
+    await sleep(config.MAX_TIMEOUT);
+    await browser.close();
     resolve(keys);
   });
 
 }
 
 async function main() {
-  let keys = {};
-  //(await find_keys(VIDSRC));
-  //(await find_keys(VIDSRCME));
-  //(await find_keys(FLIX2));
-  try {
-    keys = Object.assign({}, keys, (await find_keys(VIDSRC2)));
-  } catch (e) {
-    console.log(`[x] Error with vidsrc2.to ${e}`);
-  }
-  try {
-    keys = Object.assign({}, keys, (await find_keys(WATCHSERIES)));
-  } catch (e) {
-    console.log(`[x] Error with watchseriesx.to ${e}`);
-  }
-  try {
-    keys = Object.assign({}, keys, (await find_keys(ANIMEWAVE)));
-  } catch (e) {
-    console.log(`[x] Error with animewave.to ${e}`);
-  }
+  let promises = [find_keys(VIDSRC2), find_keys(WATCHSERIES), find_keys(ANIWAVE)];
+  let results = await Promise.all(promises);
+  let keys = Object.assign({}, ...results);
   fs.writeFileSync(keys_path, JSON.stringify(keys));
   console.log(`[-] Keys successfully stored in ${keys_path}`);
 }
