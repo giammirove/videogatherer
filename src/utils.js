@@ -5,6 +5,18 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url); // get the resolved path to the file
 const __dirname = path.dirname(__filename); // get the name of the directory
 
+export const DEBUG = process.env.DEBUG == "true";
+
+export function debug(ID, msg) {
+  if (DEBUG == true)
+    console.log(`[D-${ID}] ${msg}`);
+}
+export function error(ID, msg, e) {
+  console.log(`[x-${ID}] ${msg}`);
+  if (DEBUG == true)
+    console.log(e);
+}
+
 export function rc4(key, inp) {
   let arr = [];
   let counter = 0;
@@ -32,10 +44,10 @@ export function rc4(key, inp) {
   }
   return decrypted;
 }
-export function subst2(a) {
+export function subst(a) {
   return (btoa(a)).replace(/\//g, '_').replace(/\+/g, '-');
 }
-export function subst1(a) {
+export function subst_(a) {
   return atob((a).replace(/_/g, '/').replace(/-/g, '+'));
 }
 export function mapp(a, b, c) {
@@ -68,8 +80,10 @@ export async function try_stream(SERVERS, server, url, args = {}) {
   let handler = SERVERS.find(e => e.id == server)?.handler;
   try {
     return await handler.stream(url, args);
-  } catch {
+  } catch (e) {
     console.log(`[x] Chosen method is not working ... falling back to others`);
+    if (DEBUG)
+      console.log(e);
     for (const h of SERVERS) {
       if (h.handler == handler)
         continue;
@@ -98,4 +112,4 @@ export function get_keys(hosts) {
 }
 
 export let NO_STREAM_ERROR = "NO_STREAM";
-export let NO_KEY_ERROR = "NO_STREAM";
+export let NO_KEY_ERROR = "NO_KEY";

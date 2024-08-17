@@ -8,7 +8,7 @@
  */
 
 import CryptoJS from 'crypto-js';
-import { NO_STREAM_ERROR } from './utils.js';
+import { NO_STREAM_ERROR } from '../utils.js';
 
 async function stream(xrax, MEGA = 0) {
 

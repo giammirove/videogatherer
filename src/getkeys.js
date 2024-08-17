@@ -13,20 +13,12 @@ import traverse from '@babel/traverse';
 import fs from 'fs';
 import { webcrack } from 'webcrack';
 
-import { keys_path } from './utils.js';
+import { keys_path, debug } from './utils.js';
+import { Watchseries } from './sources/watchseriesx.js';
+import { Vidsrc } from './sources/vidsrc.js';
+import { Aniwave } from './sources/aniwave.js';
 
-// watchseries sometimes crashes ... just retry
-const WATCHSERIES = {
-  USER_AGENT: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36',
-  EXPECTED_KEYS: 18,
-  INJECT_URLS: [
-    "all.js",
-    "embed.js"
-  ],
-  INIT_URL: "https://watchseriesx.to/tv/the-big-bang-theory-jyr9n",
-  BTN_ID: ".movie-btn",
-  MAX_TIMEOUT: 2500
-}
+const ID = 'GK';
 
 const FLIX2 = {
   USER_AGENT: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36',
@@ -39,58 +31,6 @@ const FLIX2 = {
   BTN_ID: ".playnow-btn",
   MAX_TIMEOUT: 2500
 }
-
-const VIDSRC = {
-  // PlayStation bypasses dev tools detection
-  USER_AGENT: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36; PlayStation',
-  EXPECTED_KEYS: 5,
-  INJECT_URLS: [
-    "all.js",
-    "embed.js"
-  ],
-  INIT_URL: "https://vidsrc.to/embed/movie/385687",
-  BTN_ID: "#btn-play",
-  MAX_TIMEOUT: 2500
-}
-
-const VIDSRC2 = {
-  // PlayStation bypasses dev tools detection
-  USER_AGENT: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36; PlayStation',
-  EXPECTED_KEYS: 18,
-  INJECT_URLS: [
-    "all.js",
-    "embed.js"
-  ],
-  INIT_URL: "https://vidsrc2.to/embed/movie/385687",
-  BTN_ID: "#btn-play",
-  MAX_TIMEOUT: 2500
-}
-
-const VIDSRCME = {
-  // PlayStation bypasses dev tools detection
-  USER_AGENT: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36; PlayStation',
-  EXPECTED_KEYS: 5,
-  INJECT_URLS: [
-    "all.js",
-    "embed.js"
-  ],
-  INIT_URL: "https://vidsrc.me/embed/tv?imdb=tt1190634&season=1&episode=1",
-  BTN_ID: "#player_iframe",
-  MAX_TIMEOUT: 2500
-}
-
-const ANIWAVE = {
-  USER_AGENT: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36; PlayStation',
-  EXPECTED_KEYS: 18,
-  INJECT_URLS: [
-    "all.js",
-    "embed.js"
-  ],
-  INIT_URL: "https://aniwave.to/watch/one-piece.x3ln/ep-1",
-  BTN_ID: "#player-wrapper",
-  MAX_TIMEOUT: 2500
-}
-
 
 // finding possible names for the rc4 function
 // a new source is not generated since some functions depend on the min algorithm
@@ -198,6 +138,7 @@ async function find_keys(config) {
       let host = (new URL(url)).host;
       let body = await (await fetch(url)).text();
       const funcs = await get_rc4_names(body);
+      debug(ID, url, JSON.stringify(funcs));
       // risky approach since we could modify multiple functions
       // ... but in the worst case we would just be printing so no harm
       for (let n of funcs) {
@@ -248,10 +189,11 @@ async function find_keys(config) {
               keysNum++;
             }
           }
-          if (keysNum >= config.EXPECTED_KEYS) {
-            closed = true;
-            resolve(keys);
-          }
+          //if (keysNum >= config.EXPECTED_KEYS) {
+          //  closed = true;
+          //  debug(ID, `${config.ID} got ${keys.lenght}/${config.EXPECTED_KEYS}`);
+          //  resolve(keys);
+          //}
         }
       })
       .on('error', async (message) => {
@@ -280,15 +222,19 @@ async function find_keys(config) {
         console.log(`[x] ${e}`);
     }
 
-    await sleep(config.MAX_TIMEOUT);
+    if (keysNum < config.EXPECTED_KEYS) {
+      await sleep(config.MAX_TIMEOUT);
+    }
     await browser.close();
+    debug(ID, `${config.ID} got ${keysNum}/${config.EXPECTED_KEYS}`);
     resolve(keys);
   });
 
 }
 
 async function main() {
-  let promises = [find_keys(VIDSRC2), find_keys(WATCHSERIES), find_keys(ANIWAVE)];
+  let promises = [find_keys(Vidsrc.SCRAPE_CONFIG), find_keys(Watchseries.SCRAPE_CONFIG), find_keys(Aniwave.SCRAPE_CONFIG)];
+  //let promises = [find_keys(Watchseries.SCRAPE_CONFIG)];
   let results = await Promise.all(promises);
   let keys = Object.assign({}, ...results);
   fs.writeFileSync(keys_path, JSON.stringify(keys));
