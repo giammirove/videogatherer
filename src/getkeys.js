@@ -38,9 +38,9 @@ const FLIX2 = {
 async function get_rc4_names(source) {
   try {
     // deobfuscate 
-    source = (await webcrack(source, { mangle: false })).code;
-    source = (await webcrack(source, { mangle: false })).code;
-    source = (await webcrack(source, { mangle: false })).code;
+    //source = (await webcrack(source, { mangle: false })).code;
+    //source = (await webcrack(source, { mangle: false })).code;
+    //source = (await webcrack(source, { mangle: false })).code;
   } catch (e) {
     console.log(`[x] Can't webcrack`);
   }
@@ -81,7 +81,7 @@ async function get_rc4_names(source) {
         }
         // the new technique used by some websites involves a new function that maps
         // the input based on a key
-        if (whileCount == 1 && path.node.params.length == 3) {
+        if ((whileCount == 1 || forCount == 1) && path.node.params.length == 3) {
           if (path.node.id.name) {
             let name = add_params(path.node.id.name, path.node.params);
             names.push({ name: name, type: 'map' });
@@ -105,7 +105,6 @@ function entropy(str) {
   return Object.values(frequencies)
     .reduce((sum, f) => sum - f / len * Math.log2(f / len), 0)
 }
-
 
 async function find_keys(config) {
   const args = [
@@ -138,7 +137,8 @@ async function find_keys(config) {
       let host = (new URL(url)).host;
       let body = await (await fetch(url)).text();
       const funcs = await get_rc4_names(body);
-      debug(ID, url, JSON.stringify(funcs));
+      debug(ID, url);
+      debug(ID, JSON.stringify(funcs));
       // risky approach since we could modify multiple functions
       // ... but in the worst case we would just be printing so no harm
       for (let n of funcs) {
@@ -175,6 +175,7 @@ async function find_keys(config) {
           let j = JSON.parse(t.replace("S:", ""))
           if (!j['0'])
             return;
+          debug(ID, JSON.stringify(j));
           if (!keys[j['host']])
             keys[j['host']] = [];
           if (j['type'] == 'rc4') {
@@ -189,11 +190,6 @@ async function find_keys(config) {
               keysNum++;
             }
           }
-          //if (keysNum >= config.EXPECTED_KEYS) {
-          //  closed = true;
-          //  debug(ID, `${config.ID} got ${keys.lenght}/${config.EXPECTED_KEYS}`);
-          //  resolve(keys);
-          //}
         }
       })
       .on('error', async (message) => {
@@ -214,7 +210,7 @@ async function find_keys(config) {
             element.click()
           }, btn)
         }
-        await sleep(200);
+        await sleep(100);
       }
     }
     catch (e) {
@@ -234,7 +230,6 @@ async function find_keys(config) {
 
 async function main() {
   let promises = [find_keys(Vidsrc.SCRAPE_CONFIG), find_keys(Watchseries.SCRAPE_CONFIG), find_keys(Aniwave.SCRAPE_CONFIG)];
-  //let promises = [find_keys(Watchseries.SCRAPE_CONFIG)];
   let results = await Promise.all(promises);
   let keys = Object.assign({}, ...results);
   fs.writeFileSync(keys_path, JSON.stringify(keys));

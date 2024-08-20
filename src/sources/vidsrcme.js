@@ -1,5 +1,5 @@
 import fetch from 'node-fetch';
-import { try_stream } from '../utils.js';
+import { debug, try_stream } from '../utils.js';
 import { Superembed } from '../providers/superembed.js';
 
 export class VidsrcMe {
@@ -37,20 +37,25 @@ export class VidsrcMe {
 
   static async episode(data_id, server = VidsrcMe.SERVER_SUPEREMBED) {
     let url = `https://${VidsrcMe.HOST}/embed/${data_id}`;
+    debug(VidsrcMe.ID, url);
     let res = await (await VidsrcMe.fetchReferer(url)).text();
     let hash = (/data-hash="(.*?)".*Superembed.*?<\/div>/gm).exec(res)[1];
+    debug(VidsrcMe.ID, hash);
     url = `${VidsrcMe.REFERER}/rcp/${hash}`;
     res = await (await VidsrcMe.fetchReferer(url)).text();
-    const srcrcpLink = /src:\s*'(.*)'/.exec(res)?.[1];
+    const srcrcpLink = /src:\s*'(.*?)'/gms.exec(res)?.[1];
     url = `https:${srcrcpLink}`;
+    debug(VidsrcMe.ID, url);
     return await try_stream(VidsrcMe.SERVERS, server, url, { 'Referer': VidsrcMe.REFERER });
   }
 
   static async tv(data_id, s = 1, e = 1, server = VidsrcMe.SERVER_SUPEREMBED) {
+    debug(VidsrcMe.ID, data_id);
     return VidsrcMe.episode(`${data_id}/${s}-${e}`, server);
   }
 
   static async movie(data_id, server = VidsrcMe.SERVER_SUPEREMBED) {
+    debug(VidsrcMe.ID, data_id);
     return VidsrcMe.episode(data_id, server);
   }
 

@@ -7,6 +7,9 @@ const __dirname = path.dirname(__filename); // get the name of the directory
 
 export const DEBUG = process.env.DEBUG == "true";
 
+export function log(ID, msg) {
+  console.log(`[!-${ID}] ${msg}`);
+}
 export function debug(ID, msg) {
   if (DEBUG == true)
     console.log(`[D-${ID}] ${msg}`);
@@ -15,6 +18,20 @@ export function error(ID, msg, e) {
   console.log(`[x-${ID}] ${msg}`);
   if (DEBUG == true)
     console.log(e);
+}
+
+export function isJSON(d) {
+  try {
+    if (typeof (d) === "string") {
+      JSON.parse(d);
+    } else {
+      JSON.parse(JSON.stringify(d));
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function rc4(key, inp) {
@@ -81,9 +98,6 @@ export async function try_stream(SERVERS, server, url, args = {}) {
   try {
     return await handler.stream(url, args);
   } catch (e) {
-    console.log(`[x] Chosen method is not working ... falling back to others`);
-    if (DEBUG)
-      console.log(e);
     for (const h of SERVERS) {
       if (h.handler == handler)
         continue;
@@ -91,18 +105,16 @@ export async function try_stream(SERVERS, server, url, args = {}) {
       try {
         return await h.handler.stream(url, args);
       } catch {
-        console.log(`[x] ${h.id} not worked`);
       }
     }
 
-    console.log(`[x] Something went wrong :(`);
     throw NO_STREAM_ERROR;
   }
 }
 
 export const keys_path = path.join(__dirname, "keys.json");
-
 const keys = JSON.parse((fs.existsSync(keys_path)) ? fs.readFileSync(keys_path) : "{}");
+
 export function get_keys(hosts) {
   for (const h of hosts) {
     if (keys[h])

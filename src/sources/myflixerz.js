@@ -1,5 +1,5 @@
 import fetch from 'node-fetch';
-import { try_stream } from '../utils.js';
+import { error, isJSON, log, try_stream } from '../utils.js';
 import { MegaCloudRabbitStream } from '../providers/megacloudrabbitstream.js';
 import { UpCloud } from '../providers/upcloud.js';
 
@@ -14,6 +14,7 @@ export class Myflixerz {
     { id: Myflixerz.SERVER_MEGACLOUD, handler: MegaCloudRabbitStream },
     { id: Myflixerz.SERVER_UPSTREAM, handler: UpCloud },
   ]
+  static ID = "FE";
 
   static async episode(data_id, server = Myflixerz.SERVER_UPCLOUD) {
     let url = `https://${Myflixerz.HOST}/ajax/episode/servers/${data_id}`;
@@ -44,7 +45,16 @@ export class Myflixerz {
   }
 
   static async test() {
-    console.log(await Myflixerz.movie("watch-the-pastor-111166"));
-    console.log(await Myflixerz.tv("the-big-bang-theory-39508.4857451", 1, 1, Myflixerz.SERVER_UPSTREAM));
+    try {
+      let tests = [this.movie("watch-the-pastor-111166"), this.tv("the-big-bang-theory-39508.4857451", 1, 1, Myflixerz.SERVER_UPSTREAM)];
+      let results = await Promise.all(tests);
+      for (let r of results) {
+        if (!isJSON(r))
+          throw `${JSON.stringify(r)} is not json`;
+      }
+      log(this.ID, `${this.HOST} passed the tests`);
+    } catch (e) {
+      error(this.ID, `${this.HOST} failed the tests`, e);
+    }
   }
 }
