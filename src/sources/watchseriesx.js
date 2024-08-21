@@ -1,5 +1,5 @@
 import fetch from 'node-fetch';
-import { debug, mapp, reverse, subst_, subst, rc4, try_stream, get_keys, error, isJSON, log } from '../utils.js';
+import { debug, mapp, reverse, subst_, subst, rc4, try_stream, get_keys, error, isJSON, log, enc_with_order, dec_with_order, get_encrypt_order } from '../utils.js';
 import { F2Cloud } from '../providers/f2cloud.js';
 import { FMCloud } from '../providers/fmcloud.js';
 
@@ -27,13 +27,20 @@ export class Watchseries {
       "scripts.js",
       "embed.js"
     ],
-    INIT_URL: "https://watchseriesx.to/tv/the-big-bang-theory-jyr9n",
+    // input of encrypt function
+    ENTRY: new RegExp(`https://.*?/ajax/episode/list/(.*?)\\?`.replace(/\//g, '/')),
+    // output of encrypt function
+    OUT: new RegExp(`https://.*?/ajax/episode/list/.*?\\?vrf=(.*?)$`.replace(/\//g, '/')),
+    INIT_URL: `https://${this.HOST}/tv/the-big-bang-theory-jyr9n`,
     BTN_ID: ".movie-btn",
     MAX_TIMEOUT: 3500
   }
 
   static enc(inp) {
     let keys = get_keys(this.ALT_HOSTS);
+    let order = get_encrypt_order(this.ALT_HOSTS);
+    if (order.length > 0)
+      return enc_with_order(keys, order, inp);
     let a = subst(rc4(keys[2], reverse(mapp(inp, keys[0], keys[1]))));
     a = subst(rc4(keys[5], reverse(mapp(a, keys[3], keys[4]))));
     a = subst(rc4(keys[8], reverse(mapp(a, keys[6], keys[7]))));
@@ -43,6 +50,9 @@ export class Watchseries {
 
   static dec(inp) {
     let keys = get_keys(this.ALT_HOSTS);
+    let order = get_encrypt_order(this.ALT_HOSTS);
+    if (order.length > 0)
+      return dec_with_order(keys, order, inp);
     let c = subst_(inp);
     c = mapp(reverse(rc4(keys[8], subst_(c))), keys[7], keys[6])
     c = mapp(reverse(rc4(keys[5], subst_(c))), keys[4], keys[3])

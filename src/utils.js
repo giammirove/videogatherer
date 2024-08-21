@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url); // get the resolved path to the file
 const __dirname = path.dirname(__filename); // get the name of the directory
 
-export const DEBUG = process.env.DEBUG == "true";
+export const DEBUG = process?.env?.DEBUG == "true";
 
 export function log(ID, msg) {
   console.log(`[!-${ID}] ${msg}`);
@@ -16,7 +16,7 @@ export function debug(ID, msg) {
 }
 export function error(ID, msg, e) {
   console.log(`[x-${ID}] ${msg}`);
-  if (DEBUG == true)
+  if (DEBUG == true && e)
     console.log(e);
 }
 
@@ -93,11 +93,24 @@ export function general_dec(key, inp) {
   return e;
 }
 
+function string_to_func(func) {
+  switch (func) {
+    case "rc4":
+      return rc4;
+    case "mapp":
+      return mapp;
+    case "subst":
+      return subst;
+    case "reverse":
+      return reverse;
+  }
+}
+
 export async function try_stream(SERVERS, server, url, args = {}) {
   let handler = SERVERS.find(e => e.id == server)?.handler;
   try {
     return await handler.stream(url, args);
-  } catch (e) {
+  } catch {
     for (const h of SERVERS) {
       if (h.handler == handler)
         continue;
@@ -105,6 +118,7 @@ export async function try_stream(SERVERS, server, url, args = {}) {
       try {
         return await h.handler.stream(url, args);
       } catch {
+        continue;
       }
     }
 
@@ -112,8 +126,49 @@ export async function try_stream(SERVERS, server, url, args = {}) {
   }
 }
 
+export function enc_with_order(keys, order, inp) {
+  let res = "";
+  let k_i = 0;
+
+  function use_func(func, inp) {
+    let r = 0;
+    switch (func) {
+      case rc4:
+        r = rc4(keys[k_i], inp);
+        k_i++;
+        break;
+      case mapp:
+        r = mapp(inp, keys[k_i], keys[k_i + 1]);
+        k_i += 2;
+        break;
+      default:
+        r = func(inp);
+        break;
+    }
+    return r;
+  }
+
+  try {
+    for (let i = 0; i < order.length; i++)
+      res = use_func(order[i], i == 0 ? inp : res);
+  } catch (e) {
+    console.log("MANNG", inp);
+    console.log(keys);
+    console.log(order);
+    console.error(e);
+    return "";
+  }
+
+  return res;
+}
+export function dec_with_order(keys, order, inp) {
+  return enc_with_order(keys.concat().reverse(), order.concat().reverse().map(f => f == subst ? subst_ : f), inp);
+}
+
 export const keys_path = path.join(__dirname, "keys.json");
-const keys = JSON.parse((fs.existsSync(keys_path)) ? fs.readFileSync(keys_path) : "{}");
+const store = JSON.parse((fs.existsSync(keys_path)) ? fs.readFileSync(keys_path) : "{}");
+const keys = store["keys"];
+const encrypt_orders = store["encrypt_order"];
 
 export function get_keys(hosts) {
   for (const h of hosts) {
@@ -123,5 +178,13 @@ export function get_keys(hosts) {
   throw NO_KEY_ERROR;
 }
 
-export let NO_STREAM_ERROR = "NO_STREAM";
-export let NO_KEY_ERROR = "NO_KEY";
+export function get_encrypt_order(hosts) {
+  for (const h of hosts) {
+    if (encrypt_orders[h])
+      return encrypt_orders[h].map(f => string_to_func(f));
+  }
+  return [];
+}
+
+export const NO_STREAM_ERROR = "NO_STREAM";
+export const NO_KEY_ERROR = "NO_KEY";

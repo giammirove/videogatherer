@@ -1,5 +1,5 @@
 import fetch from 'node-fetch';
-import { debug, try_stream } from '../utils.js';
+import { debug, error, isJSON, log, try_stream } from '../utils.js';
 import { Superembed } from '../providers/superembed.js';
 
 export class VidsrcMe {
@@ -60,7 +60,16 @@ export class VidsrcMe {
   }
 
   static async test() {
-    console.log(await VidsrcMe.tv('tt1312171', 2, 3));
-    console.log(await VidsrcMe.movie('tt1300854'));
+    try {
+      let tests = [this.movie("tt1300854"), this.tv('tt1312171', 2, 3)];
+      let results = await Promise.all(tests);
+      for (let r of results) {
+        if (!isJSON(r))
+          throw `${JSON.stringify(r)} is not json`;
+      }
+      log(this.ID, `${this.HOST} passed the tests`);
+    } catch (e) {
+      error(this.ID, `${this.HOST} failed the tests`, e);
+    }
   }
 }

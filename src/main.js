@@ -15,8 +15,8 @@ async function main() {
   FlixHQ.test();
   Myflixerz.test();
   Aniwave.test();
-  // it has captcha
-  //VidsrcMe.test();
+  //it has captcha
+  VidsrcMe.test();
 }
 
 main();

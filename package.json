@@ -2,7 +2,7 @@
   "scripts": {
     "start": "node src/main.js",
     "keys": "node src/getkeys.js",
-    "lint": "eslint src"
+    "lint": "eslint --ignore-pattern src/providers/rabbitstream.js src"
   },
   "dependencies": {
     "@babel/parser": "^7.25.3",

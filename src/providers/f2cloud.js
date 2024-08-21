@@ -1,14 +1,26 @@
 import fetch from 'node-fetch';
-import { debug, mapp, reverse, subst_, subst, rc4, get_keys } from '../utils.js';
+import { debug, mapp, reverse, subst_, subst, rc4, get_keys, dec_with_order, enc_with_order, get_encrypt_order } from '../utils.js';
 
 export class F2Cloud {
 
   // alternative hosts
-  static ALT_HOSTS = ["vid2faf.site", "vid2v11.site"];
+  static HOST = "vid2v11.site";
+  static ALT_HOSTS = [this.HOST, "vid2faf.site"];
   static ID = "F2";
+
+  static SCRAPE_CONFIG = {
+    ID: this.ID,
+    // input of encrypt function
+    ENTRY: new RegExp(`https://.*?/e/(.*?)\\?`.replace(/\//g, '/')),
+    // output of encrypt function
+    OUT: new RegExp(`https://.*?/mediainfo/(.*?)[&\\?]`.replace(/\//g, '/')),
+  }
 
   static enc(inp) {
     let keys = get_keys(this.ALT_HOSTS);
+    let order = get_encrypt_order(this.ALT_HOSTS);
+    if (order.length > 0)
+      return enc_with_order(keys, order, inp);
     let a = mapp(inp, keys[0], keys[1]);
     a = reverse(a);
     a = rc4(keys[2], a);
@@ -27,6 +39,9 @@ export class F2Cloud {
 
   static dec(inp) {
     let keys = get_keys(this.ALT_HOSTS);
+    let order = get_encrypt_order(this.ALT_HOSTS);
+    if (order.length > 0)
+      return dec_with_order(keys, order, inp);
     let a = subst_(inp);
     a = mapp(a, keys[8], keys[7]);
     a = reverse(a);

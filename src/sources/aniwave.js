@@ -1,5 +1,5 @@
 import fetch from 'node-fetch';
-import { mapp, reverse, subst_, subst, rc4, debug, try_stream, get_keys, error, log, isJSON } from '../utils.js';
+import { mapp, reverse, subst_, subst, rc4, debug, try_stream, get_keys, error, log, isJSON, get_encrypt_order, enc_with_order, dec_with_order } from '../utils.js';
 import { F2Cloud } from '../providers/f2cloud.js';
 import { FMCloud } from '../providers/fmcloud.js';
 
@@ -26,6 +26,10 @@ export class Aniwave {
       "embed.js",
       "scripts.js"
     ],
+    // input of encrypt function
+    ENTRY: new RegExp(`https://.*?/ajax/episode/list/(.*?)\\?`.replace(/\//g, '/')),
+    // output of encrypt function
+    OUT: new RegExp(`https://.*?/ajax/episode/list/.*?\\?vrf=(.*?)$`.replace(/\//g, '/')),
     INIT_URL: "https://aniwave.to/watch/one-piece.x3ln/ep-1",
     BTN_ID: "#player-wrapper",
     MAX_TIMEOUT: 2500
@@ -33,6 +37,9 @@ export class Aniwave {
 
   static enc(a) {
     let keys = get_keys(this.ALT_HOSTS);
+    let order = get_encrypt_order(this.ALT_HOSTS);
+    if (order.length > 0)
+      return enc_with_order(keys, order, a);
     a = reverse(subst(rc4(keys[2], mapp(a, keys[0], keys[1]))));
     a = mapp(subst(rc4(keys[3], reverse(a))), keys[4], keys[5]);
     a = subst(rc4(keys[8], reverse(mapp(a, keys[6], keys[7]))));
@@ -40,6 +47,9 @@ export class Aniwave {
   }
   static dec(a) {
     let keys = get_keys(this.ALT_HOSTS);
+    let order = get_encrypt_order(this.ALT_HOSTS);
+    if (order.length > 0)
+      return dec_with_order(keys, order, a);
     a = subst_(a);
     a = mapp(reverse(rc4(keys[8], subst_(a))), keys[7], keys[6]);
     a = reverse(rc4(keys[3], subst_(mapp(a, keys[5], keys[4]))));

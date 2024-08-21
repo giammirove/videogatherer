@@ -1,11 +1,11 @@
 import fetch from 'node-fetch';
-import { mapp, reverse, rc4, subst, subst_, debug, get_keys, error, log, isJSON } from '../utils.js';
+import { mapp, reverse, rc4, subst, subst_, debug, get_keys, error, log, isJSON, get_encrypt_order, enc_with_order, dec_with_order } from '../utils.js';
 import { F2Cloud } from '../providers/f2cloud.js';
 
 export class Vidsrc {
 
   static HOST = 'vidsrc2.to';
-  static ALT_HOSTS = [this.HOST, 'vid2v11.site'];
+  static ALT_HOSTS = [this.HOST];
   static ID = 'VS';
 
   static SCRAPE_CONFIG = {
@@ -18,21 +18,33 @@ export class Vidsrc {
       "embed.js",
       "web.js"
     ],
-    INIT_URL: "https://vidsrc2.to/embed/movie/385687",
+    // input of encrypt function
+    ENTRY: new RegExp(`https://.*?/ajax/embed/episode/(.*?)/sources\\?.*`.replace(/\//g, '/')),
+    // output of encrypt function
+    OUT: new RegExp(`https://.*?/ajax/embed/episode/.*?/sources\\?.*token=(.*?)$`.replace(/\//g, '/')),
+    INIT_URL: `https://${this.HOST}/embed/movie/385687`,
     BTN_ID: "#btn-play",
     MAX_TIMEOUT: 2500
   }
 
   static enc(inp) {
     let keys = get_keys(this.ALT_HOSTS);
+    let order = get_encrypt_order(this.ALT_HOSTS);
+    if (order.length > 0)
+      return enc_with_order(keys, order, inp);
+
     let a = mapp(subst(rc4(keys[0], reverse(inp))), keys[1], keys[2]);
     a = mapp(reverse(subst(rc4(keys[3], a))), keys[4], keys[5]);
-    a = subst(rc4(keys[8], reverse(mapp(a, keys[6], keys[7]))));
-    return subst(a);
+    a = rc4(keys[8], reverse(mapp(a, keys[6], keys[7])));
+    return subst(subst(a));
   }
 
   static dec(inp) {
     let keys = get_keys(this.ALT_HOSTS);
+    let order = get_encrypt_order(this.ALT_HOSTS);
+    if (order.length > 0)
+      return dec_with_order(keys, order, inp);
+
     let a = subst_(inp);
     a = mapp(reverse(rc4(keys[8], subst_(a))), keys[7], keys[6]);
     a = rc4(keys[3], subst_(reverse(mapp(a, keys[5], keys[4]))));
@@ -75,7 +87,7 @@ export class Vidsrc {
 
   static async test() {
     try {
-      let tests = [this.movie("385687")/*, this.tv("tt0944947", 1, 1), this.tv("tt1190634", 1, 1)*/];
+      let tests = [this.movie("385687"), this.tv("tt0944947", 1, 1), this.tv("tt1190634", 1, 1)];
       let results = await Promise.all(tests);
       for (let r of results) {
         if (!isJSON(r))
@@ -87,3 +99,4 @@ export class Vidsrc {
     }
   }
 }
+
