@@ -1,26 +1,32 @@
 {
+  "type": "module",
   "scripts": {
-    "start": "node src/main.js",
-    "keys": "node src/getkeys.js",
-    "lint": "eslint --ignore-pattern src/providers/rabbitstream.js src"
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "keys": "node dist/get_keys.js",
+    "lint": "eslint --ignore-pattern src/providers/rabbitstream.js src",
+    "fix": "eslint --fix --ignore-pattern src/providers/rabbitstream.js src"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.9.1",
+    "@types/eslint__js": "^8.42.3",
+    "@typescript-eslint/eslint-plugin": "^8.2.0",
+    "eslint": "^9.9.1",
+    "lint": "^0.8.19",
+    "typescript": "^5.5.4",
+    "typescript-eslint": "^8.2.0"
   },
   "dependencies": {
-    "@babel/parser": "^7.25.3",
-    "@babel/traverse": "^7.25.3",
+    "@babel/parser": "^7.25.4",
+    "@babel/traverse": "^7.25.4",
+    "@types/babel__traverse": "^7.20.6",
+    "@types/node": "^22.5.0",
+    "@types/node-fetch": "^2.6.11",
+    "@types/puppeteer": "^5.4.7",
     "crypto-js": "^4.2.0",
-    "deobfuscator": "^2.4.5",
     "node-fetch": "^3.3.2",
-    "puppeteer": "^22.15.0",
-    "puppeteer-core": "^22.15.0",
+    "puppeteer": "^23.1.1",
     "puppeteer-extra": "^3.3.6",
-    "puppeteer-extra-plugin-stealth": "^2.11.2",
-    "webcrack": "^2.14.1"
-  },
-  "type": "module",
-  "devDependencies": {
-    "@eslint/js": "^9.9.0",
-    "eslint": "^9.9.0",
-    "globals": "^15.9.0",
-    "jsdom": "^24.1.1"
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
   }
 }
