@@ -3,7 +3,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/main.js",
-    "keys": "node dist/get_keys.js",
+    "keys": "node dist/getkeys.js",
     "lint": "eslint --ignore-pattern src/providers/rabbitstream.js src",
     "fix": "eslint --fix --ignore-pattern src/providers/rabbitstream.js src"
   },

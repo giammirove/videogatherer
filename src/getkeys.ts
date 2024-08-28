@@ -17,6 +17,8 @@ import { Watchseries } from './sources/watchseries.js';
 import { Vidsrc } from './sources/vidsrc.js';
 import { Aniwave } from './sources/aniwave.js';
 import { F2Cloud } from './providers/f2cloud.js';
+import { MoviesJoy } from './sources/moviesjoy.is.js';
+import { VidStream } from './sources/vidstream.to.js';
 
 type ForWhile = {
   fors: number,
@@ -310,7 +312,7 @@ async function find_keys(config: ScrapeConfig) {
   const options = {
     args,
     executablePath: process.env.PUPPETEER_EXEC_PATH || executablePath(),
-    headless: true,
+    headless: false,
   };
 
   const browser = await puppeteer.launch(options);
@@ -412,9 +414,10 @@ function test_keys_funcs(keys: Array<string>, funcs: Array<TransformText>, entry
 }
 
 async function main() {
+  // disabled
+  return;
   prepare_entries([Vidsrc, F2Cloud, Watchseries, Aniwave]);
   const promises = [find_keys(Vidsrc.SCRAPE_CONFIG!), find_keys(Watchseries.SCRAPE_CONFIG!), find_keys(Aniwave.SCRAPE_CONFIG!)];
-  //let promises = [find_keys(VIDSRCCC)];
   const results_promises = (await Promise.all(promises));
   const results = { keys: {}, traces: {}, entries_outs: {}, encrypt_order: {} } as Store
   for (const r of results_promises) {
