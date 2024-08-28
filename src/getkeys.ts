@@ -17,7 +17,6 @@ import { Watchseries } from './sources/watchseries.js';
 import { Vidsrc } from './sources/vidsrc.js';
 import { Aniwave } from './sources/aniwave.js';
 import { F2Cloud } from './providers/f2cloud.js';
-import { MoviesJoy } from './sources/moviesjoy.is.js';
 import { VidStream } from './sources/vidstream.to.js';
 
 type ForWhile = {
