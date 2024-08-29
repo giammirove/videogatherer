@@ -1,4 +1,15 @@
-# VideoGatherer Scraping movies and tv series from vidsrc.to, flixhq.to, aniwave.to, watchseriesx.to, myflixerz.to, vidsrc.net, vidsrc.pro.
+# VideoGatherer 
+
+Scraping movies and tv series from:
+- flixhq.to 
+- myflixerz.to
+- vidsrc.net
+- vidsrc.pro
+- vidsrc.cc
+- vidstream.to
+- vidsrc.to (dead)
+- aniwave.to (dead)
+- watchseriesx.to (dead)
 
 At the moment the purpose of this repository is to expose methods used 
 to scrape websites.
@@ -30,7 +41,7 @@ npm run start
 ```
 
 Examples of how to request an episode/movie can be found in the `test` function
-of each class (`Vidsrc`, `FlixHQ`, `Watchseries`, `Myflixerz`, `VidsrcMe`).
+of each module in `src/sources`.
 
 ### What if it does not work
 
