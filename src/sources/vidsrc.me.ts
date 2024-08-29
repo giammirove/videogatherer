@@ -1,9 +1,8 @@
 import fetch from 'node-fetch';
-import t, { FunctionDeclaration } from "@babel/types";
 import { webcrack } from 'webcrack';
 import vm from 'node:vm';
 
-import { Source, Stream, ServerListItem, isJSON, log, error, debug } from '../utils.js';
+import { Source, Stream, ServerListItem, isJSON, log, error, debug, NO_STREAM_ERROR } from '../utils.js';
 import { RequestInit } from 'node-fetch';
 
 
@@ -17,6 +16,8 @@ const REFERER = `http://${HOST}`;
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36';
 let js_context = vm.createContext(globalThis);
 
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
 async function fetchReferer(url: URL | string, args: RequestInit = { headers: {} }) {
   if (args.headers == undefined)
     args.headers = {};
@@ -26,67 +27,61 @@ async function fetchReferer(url: URL | string, args: RequestInit = { headers: {}
   return fetch(url, args);
 }
 
-function dec(input: string) {
-  const reversed = input.split("").reverse().join("");
-  let result = "";
-  for (let i = 0; i < reversed.length; i++) {
-    result += String.fromCharCode(reversed.charCodeAt(i) - 1);
-  }
-  let result2 = "";
-  for (let i = 0; i < result.length; i += 2) {
-    result2 += String.fromCharCode(parseInt(result.substr(i, 2), 16));
-  }
-  return result2;
-}
-
 async function episode(data_id: string, _server?: string): Promise<Stream> {
   const url = `https://${HOST}/embed/${data_id}`;
   debug(ID, url);
   const res = await (await fetchReferer(url)).text();
-  const url2 = 'https:' + (/id="player_iframe" src="(.*?)"/gm).exec(res)[1].trim();
-  debug(ID, url2);
-  const res2 = await (await fetchReferer(url2)).text();
-  debug(ID, res2);
-  const host = (new URL(url2)).host;
-  const srcrcpLink = /src:\s*'(.*?)'/gm.exec(res2)![1];
-  debug(ID, srcrcpLink);
-  const url3 = `https://${host}${srcrcpLink}`;
-  debug(ID, url3);
-  const res3 = await (await fetch(url3)).text();
-  const [, enc_url] = (/<div id=".*?" style="display:none;">(.*?)<\/div>/gm).exec(res3)!;
-  const script_url = `https://${host}` + (/<script src="(.{20,}\.js\?_=.*?)"/gm).exec(res3)![1];
-  debug(ID, script_url);
   let script = "";
-  for (let i = 0; i < 3; i++) {
-    const res_script = await fetchReferer(script_url);
-    if (res_script.status != 200)
-      continue;
-    script = await (res_script).text();
+  let enc_url = "";
+  let script_id = "";
+  for (let i = 0; i < 10; i++) {
+    try {
+      const url2 = 'https:' + (/id="player_iframe" src="(.*?)"/gm).exec(res)[1].trim();
+      const res2 = await (await fetchReferer(url2)).text();
+      const host = (new URL(url2)).host;
+      const srcrcpLink = /src:\s*'(.*?)'/gm.exec(res2)![1];
+      const url3 = `https://${host}${srcrcpLink}`;
+      // sometimes it returns 404
+      const res3 = await (await fetch(url3)).text();
+      enc_url = (/<div id=".*?" style="display:none;">(.*?)<\/div>/gm).exec(res3)![1];
+      const script_url = `https://${host}` + (/<script src="(.{20,}\.js\?_=.*?)"/gm).exec(res3)![1];
+      const res_script = await fetchReferer(script_url);
+      debug(ID, `${data_id} -> ${res_script.status.toString()}`);
+      if (res_script.status != 200) {
+        await sleep(1000);
+        continue;
+      }
+      script = await (res_script).text();
+      script_id = /window\[bMGyx71TzQLfdonN\(["'](.*?)["'].*innerHTML\);$/gm.exec(script)![1];
+      const new_script = (await webcrack(script, { mangle: false })).code;
+      try {
+        vm.runInContext(new_script, js_context);
+      } catch (e) {
+      }
+      break;
+    } catch {
+    }
   }
-  const [_, script_id] = /window\[bMGyx71TzQLfdonN\(["'](.*?)["'].*innerHTML\);$/gm.exec(script)!;
-  const new_script = (await webcrack(script, { mangle: false })).code;
-  try {
-    vm.runInContext(new_script, js_context);
-  } catch (e) {
-  }
+  if (script == "")
+    throw NO_STREAM_ERROR;
   const dec_url = vm.runInContext(`${script_id}('${enc_url}')`, js_context);
-  debug(ID, dec_url)
+  debug(ID, dec_url);
   return { stream: dec_url } as Stream;
 };
 
-async function movie(id: string, _server?: string) {
+async function movie(id: string, _server?: string): Promise<Stream> {
   debug(ID, id);
   return episode(id, _server);
 }
 
-async function tv(id: string, s: number = 1, e: number = 1, _server?: string) {
+async function tv(id: string, s: number = 1, e: number = 1, _server?: string): Promise<Stream> {
   debug(ID, id);
   return episode(`${id}/${s}-${e}`, _server);
 }
 
 async function test() {
   try {
-    const tests = [movie("tt1300854")/*, tv('tt1312171', 1, 1)*/];
+    const tests = [movie("tt1300854"), tv('tt1312171', 1, 1)];
     const results = await Promise.all(tests);
     for (const r of results) {
       if (!isJSON(r))

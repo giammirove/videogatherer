@@ -21,11 +21,12 @@ export type ScrapeConfig = {
   EXPECTED_KEYS?: number,
 }
 
+export type Subtitle = {
+  label: string, file: string
+}
 export type Stream = {
   stream: string
-  subtitles?: [
-    { label: string, file: string }
-  ]
+  subtitles?: Array<Subtitle>
 }
 
 export type Source = {
