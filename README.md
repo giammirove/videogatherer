@@ -1,13 +1,14 @@
 # VideoGatherer 
 
 Scraping movies and tv series from:
-- flixhq.to 
-- myflixerz.to
-- vidsrc.net
-- vidsrc.pro
-- vidsrc.cc
-- vidstream.to
-- vidsrc.to (dead)
+- embed.su (28/01/2025)
+- flixhq.to (not maintained since 30/09/2024) 
+- myflixerz.to (not maintained since 30/09/2024)
+- vidsrc.net (not maintained since 30/09/2024)
+- vidsrc.pro (moved to embed.su)
+- vidsrc.cc (not maintained since 30/09/2024)
+- vidstream.to (not maintained since 30/09/2024)
+- vidsrc.to (not maintained since 30/09/2024)
 - aniwave.to (dead)
 - watchseriesx.to (dead)
 

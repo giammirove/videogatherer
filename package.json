@@ -26,6 +26,7 @@
     "@types/node": "^22.5.0",
     "@types/node-fetch": "^2.6.11",
     "@types/puppeteer": "^5.4.7",
+    "browser-env": "^3.3.0",
     "crypto-js": "^4.2.0",
     "node-fetch": "^3.3.2",
     "puppeteer": "^23.1.1",
